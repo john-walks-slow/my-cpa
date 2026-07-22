@@ -1,0 +1,7 @@
+bin/
+*.so
+*.dylib
+*.dll
+*.h
+stats.json
+stats.json.tmp

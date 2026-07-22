@@ -1,0 +1,15 @@
+plugins:
+  enabled: true
+  dir: "plugins"
+  configs:
+    my-cpa-stats-plugin:
+      enabled: true
+      retention_minutes: 1440          # 24h
+      persist_path: "stats.json"        # 留空则不落盘
+      persist_interval_sec: 30
+      cardinality_limit: 50000
+      share_enabled: true
+      share_path: ""                     # 默认取 persist_path 所在目录
+      share_max_count: 1000
+      share_cleanup_interval_sec: 3600
+      share_max_snapshot_bytes: 5242880

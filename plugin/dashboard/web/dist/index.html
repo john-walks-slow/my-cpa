@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stats Dashboard</title>
+<link rel="stylesheet" href="uPlot.min.css">
+<link rel="stylesheet" href="app.css">
+<script src="uPlot.iife.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <header class="toolbar">
+    <h1 class="toolbar-title">Stats Dashboard <span id="mode-label" class="mode-label" hidden>Shared snapshot</span></h1>
+    <div class="toolbar-controls">
+      <button id="compare-btn" class="btn-primary">Compare</button>
+      <div class="segmented" id="range-selector" role="group" aria-label="Time range">
+        <button data-range="15m">15m</button>
+        <button data-range="1h" class="active">1h</button>
+        <button data-range="6h">6h</button>
+        <button data-range="24h">24h</button>
+        <button data-range="7d">7d</button>
+        <button data-range="custom">Custom</button>
+      </div>
+      <div class="segmented" id="refresh-selector" role="group" aria-label="Auto refresh">
+        <button data-interval="0" class="active">Off</button>
+        <button data-interval="30">30s</button>
+        <button data-interval="60">1m</button>
+        <button data-interval="300">5m</button>
+      </div>
+      <button id="refresh-btn" class="btn-icon" title="Refresh now" aria-label="Refresh now">&#8635;</button>
+      <button id="theme-btn" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">&#9681;</button>
+    </div>
+  </header>
+
+  <div id="auth-banner" class="banner banner-error" hidden>
+    Management key missing or expired. Please log in via Management Center first.
+  </div>
+
+  <div id="progress-bar" class="progress-bar" hidden></div>
+
+  <main class="content">
+    <section id="compare-section" class="compare-section" hidden>
+      <div class="compare-header"><div><h2 class="section-title">Compare performance</h2><p id="compare-count" class="muted">Select 2–6 models or auth identities.</p></div><div class="compare-actions"><button id="share-btn" class="btn-primary">Share</button><button id="csv-btn" class="btn-secondary">CSV</button><button id="compare-close" class="btn-secondary">Close</button></div></div>
+      <div class="compare-controls"><select id="compare-kind"><option value="model">Models</option><option value="auth">Auth</option></select><select id="compare-metric"><option value="p95_ttft_ms">TTFT P95</option><option value="avg_stream_rate_tps">TPS</option><option value="success_rate">Success rate</option><option value="avg_latency_ms">Total response time</option></select><select id="compare-range"><option value="1h">1h</option><option value="6h">6h</option><option value="24h" selected>24h</option><option value="7d">7d</option><option value="custom">Custom</option></select><input id="compare-from" type="datetime-local" hidden><input id="compare-to" type="datetime-local" hidden><select id="compare-expires"><option value="24h">Expires in 24h</option><option value="7d">Expires in 7d</option><option value="30d">Expires in 30d</option><option value="never">Never expires</option></select><label class="check"><input id="compare-token" type="checkbox"> Require token</label></div>
+      <div id="compare-subjects" class="subject-picker"></div><div id="compare-error" class="banner banner-error" hidden></div>
+      <p id="compare-kpi-note" class="muted"></p>
+      <div id="compare-kpis" class="compare-kpis"></div><div class="chart-panel compare-chart"><h2 class="chart-title">Normalized (relative shape)</h2><div id="compare-chart-body" class="chart-body"></div></div>
+      <div class="table-wrap"><table id="compare-table"><thead><tr><th>Rank</th><th>Subject</th><th>Current value</th><th>Samples</th><th>Success</th><th>Trend</th><th>24h vs prev 24h</th></tr></thead><tbody></tbody></table></div><div id="compare-empty" class="empty-state" hidden>No comparison data for the selected subjects.</div>
+    </section>
+    <section class="kpi-grid" id="kpi-section" aria-label="Key metrics">
+      <div class="kpi-card skeleton" data-kpi="requests"><span class="kpi-label">Requests</span><span class="kpi-value">—</span></div>
+      <div class="kpi-card skeleton" data-kpi="ttft"><span class="kpi-label">P50 TTFT</span><span class="kpi-value">—</span></div>
+      <div class="kpi-card skeleton" data-kpi="tps"><span class="kpi-label">Avg TPS</span><span class="kpi-value">—</span></div>
+      <div class="kpi-card skeleton" data-kpi="error"><span class="kpi-label">Error Rate</span><span class="kpi-value">—</span></div>
+    </section>
+
+    <section class="insight-grid" id="insight-section" aria-label="Insights">
+      <div class="insight-card skeleton" data-insight="fastest"><span class="insight-label">Fastest</span><span class="insight-value">—</span><span class="insight-detail"></span></div>
+      <div class="insight-card skeleton" data-insight="slowest"><span class="insight-label">Slowest</span><span class="insight-value">—</span><span class="insight-detail"></span></div>
+      <div class="insight-card skeleton" data-insight="stable"><span class="insight-label">Most Stable</span><span class="insight-value">—</span><span class="insight-detail"></span></div>
+      <div class="insight-card skeleton" data-insight="anomaly"><span class="insight-label">Last Anomaly</span><span class="insight-value">—</span><span class="insight-detail"></span></div>
+    </section>
+
+    <section class="charts" aria-label="Trends">
+      <div class="chart-panel" id="chart-ttft">
+        <h2 class="chart-title">TTFT P50 / P95</h2>
+        <div class="chart-body"></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-panel" id="chart-tps">
+          <h2 class="chart-title">Throughput (TPS)</h2>
+          <div class="chart-body"></div>
+        </div>
+        <div class="chart-panel" id="chart-error">
+          <h2 class="chart-title">Error Rate</h2>
+          <div class="chart-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-section" aria-label="Model breakdown">
+      <h2 class="section-title">Models</h2>
+      <div class="table-wrap">
+        <table id="model-table">
+          <thead>
+            <tr>
+              <th data-col="model">Model</th>
+              <th data-col="count">Reqs</th>
+              <th data-col="p50">P50</th>
+              <th data-col="p95">P95</th>
+              <th data-col="tps">TPS</th>
+              <th data-col="errorRate">Err%</th>
+              <th data-col="lastSeen">Last</th>
+            </tr>
+          </thead>
+          <tbody id="model-tbody"></tbody>
+        </table>
+      </div>
+      <div id="table-empty" class="empty-state" hidden>No data yet. Waiting for first request to be aggregated.</div>
+    </section>
+  </main>
+
+  <aside id="drill-panel" class="drill-panel" hidden>
+    <div class="drill-header">
+      <h2 id="drill-title">Model</h2>
+      <button id="drill-close" class="btn-icon" aria-label="Close panel">&times;</button>
+    </div>
+    <div id="drill-body" class="drill-body"></div>
+  </aside>
+
+    <div id="share-modal" class="modal" hidden></div>
+  <div id="compare-tooltip" class="compare-tooltip" role="tooltip" aria-live="polite" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
