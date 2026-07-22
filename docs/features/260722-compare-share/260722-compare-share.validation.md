@@ -24,7 +24,7 @@
 
 ## 自动化测试结果
 
-- `go test ./... -race`：全部通过（2026-07-23 02:05 验证）。覆盖项：
+- `go test ./... -race`：全部通过（2026-07-23 第四轮复核验证）。覆盖项：
   - TestValidateRequest：2–6 subject 边界、retention 越界、metric 非法、trim+dedup。
   - TestBuildReportByModelAndTrend / TestBuildReportByAuth：基础报告与 auth kind。
   - TestTTP95CrossBucket：10 个 bucket × 100 样本 × TTFT=100ms 的真实 P95 应在 95–105ms 之间（B-12 回归保护）。
@@ -43,7 +43,21 @@
   - TestCreateEnforceFailureRollback：enforceMaxCount 后目录计数受约束。
   - TestShareCookieSecure / TestIsTLSRequest：cookie Secure 标志在 HTTPS 上游下启用，Path/HttpOnly/SameSite 始终保留。
   - TestResourcePaths：`/share-data` 已从静态资源路径中移除。
-- `node --check plugin/dashboard/web/dist/app.js`：通过（2026-07-23 02:05 验证）。
+  - TestPublicShareNotFound / TestPublicShareTokenAndCookie / TestPublicShareNoStore：公开 handler 404/token/cookie 行为（S-06）。
+  - TestNormalizeConstantSeries：常数序列归一化为 0.5（S-06）。
+  - TestFrontendTooltipXSS / TestFrontendTooltipMultiSeries / TestFrontendTooltipPageCoords / TestFrontendUPlotLoadOrder / TestFrontendCSVZeroValues：前端源码模式验证（B-16～B-19）。
+- `node --check plugin/dashboard/web/dist/app.js`：通过（2026-07-23 第四轮复核验证）。
+
+## 浏览器 smoke 测试结果
+
+使用 `scripts/smoke-test.js` mock API 服务器验证（2026-07-23 第四轮复核）：
+
+- Dashboard 加载无 console 错误，uPlot 正确加载。
+- Compare 按钮打开选择器，选择 2 个 model 后 KPI 卡（4 项）、归一化图表、排名表正确渲染。
+- 排名表显示 Rank/Subject/Current value/Samples/Success/Trend/24h vs prev 24h 列，排序方向正确（TTFT P95 升序）。
+- Hover 图表触发 tooltip，显示时间戳、所有 series 的 raw 值（带颜色 swatch）和归一化值。
+- Share-only 模式（`share.html?id=...`）隐藏 Compare/Share/CSV/Close 按钮、选择器、KPI/insights/charts/models 区域，显示 "Shared snapshot" 标签和只读说明。
+- CSV/Share 按钮在编辑模式下可用，在 share-only 模式下隐藏。
 
 ## 待跟进
 

@@ -69,6 +69,19 @@ v4 reviewer 指出 B-14 与 B-15 仍需补强；本轮完成：
 - `go test ./...`：全部通过。
 - `node --check plugin/dashboard/web/dist/app.js`：通过。
 
+## 第四轮复核（v5 重新核验）
+
+从当前工作区重新核验并完成 B-14～B-19、S-09 选项 A、S-06 关键测试：
+
+- **B-14**：确认 `weightedSample` 算法顺序无关、严格 `len ≤ maxTTP95Samples`；4 项测试全部通过（100× 权重差、正/逆序、reservoir 截断、16K+1 边界）。
+- **B-15**：确认 `ttft_observed` 字段在 JSON 报告中正确输出；前端 `metricAvailable` 在 `ttft_observed === 0` 时显示 `—`；CSV 中 `p95_ttft_ms` 列在缺失时留空。
+- **B-16～B-19**：确认 tooltip 使用 DOM API（无 innerHTML）、uPlot 在 app.js 前加载、tooltip 列出所有 series 并使用 clientX/Y 定位、CSV 使用 `??` 保留零值。
+- **S-09 选项 A**：确认 `trend_24h_over_24h` 字段名、`computeTrend24hOver24h` 始终使用最近 24h vs 前 24h、前端表头为 "24h vs prev 24h"。
+- **S-06**：确认公开 handler 404/token/cookie 测试、常数归一化测试、tooltip/CSV 源码模式测试全部通过。
+- **浏览器 smoke**：使用 mock API 服务器验证 dashboard 加载、Compare 选择、KPI/图表/排名表渲染、tooltip 多 series 显示、share-only 模式控件隐藏。
+- `go test ./...`：全部通过。
+- `node --check plugin/dashboard/web/dist/app.js`：通过。
+
 ## 变更状态
 
 本轮代码与文档修复已完成，尚未提交 commit；按工作流仍需宿主实机验证，并等待用户书面确认后再提交。

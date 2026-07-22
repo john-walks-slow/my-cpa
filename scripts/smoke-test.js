@@ -85,7 +85,7 @@ const server = http.createServer((req, res) => {
   
   // Static files
   let filePath = url.pathname;
-  if (filePath === '/' || filePath === '/index.html') {
+  if (filePath === '/' || filePath === '/index.html' || filePath === '/share.html') {
     filePath = '/index.html';
   }
   
