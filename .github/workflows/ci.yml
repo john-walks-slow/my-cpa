@@ -37,12 +37,31 @@ jobs:
           path: bin/
 
   release:
-    name: Build & Release
-    runs-on: ubuntu-latest
+    name: Build & Package (${{ matrix.label }})
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            ext: so
+            label: linux/amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            ext: dll
+            label: windows/amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            ext: dylib
+            label: darwin/amd64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,33 +69,65 @@ jobs:
         with:
           go-version: "1.26"
 
-      - name: Build all platforms
+      - name: Build & zip
         env:
           PLUGIN_ID: my-cpa-stats-plugin
           VERSION: ${{ github.ref_name }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
         run: |
           set -e
-          # strip leading 'v' from version (e.g. v0.1.0 -> 0.1.0)
           VER="${VERSION#v}"
           mkdir -p dist
-          for pair in "windows amd64 .dll" "linux amd64 .so" "darwin amd64 .dylib"; do
-            GOOS=$(echo $pair | cut -d' ' -f1)
-            GOARCH=$(echo $pair | cut -d' ' -f2)
-            EXT=$(echo $pair | cut -d' ' -f3)
-            OUT="dist/${PLUGIN_ID}.${EXT}"
-            echo "Building $GOOS/$GOARCH -> $OUT"
-            CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH \
-              go build -buildmode=c-shared -o "$OUT" ./plugin
-            ZIP="dist/${PLUGIN_ID}_${VER}_${GOOS}_${GOARCH}.zip"
-            (cd dist && zip -j "$ZIP" "${PLUGIN_ID}.${EXT}")
-          done
-          sha256sum dist/*.zip > dist/checksums.txt
-          cat dist/checksums.txt
+          OUT="dist/${PLUGIN_ID}.${EXT}"
+          ZIP="dist/${PLUGIN_ID}_${VER}_${GOOS}_${GOARCH}.zip"
+          echo "Building ${GOOS}/${GOARCH} -> ${OUT}"
+          CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH \
+            go build -buildmode=c-shared -o "$OUT" ./plugin
+          # Use Python's zipfile for portable, deterministic zipping across all 3 OSes.
+          # `zip -j` on the linux/macOS runner is fine but Python keeps one tool path.
+          python - <<PYEOF
+          import os, zipfile
+          src = os.path.join('dist', '${PLUGIN_ID}.${EXT}')
+          dst = os.path.join('dist', '${PLUGIN_ID}_${VER}_${GOOS}_${GOARCH}.zip')
+          arcname = '${PLUGIN_ID}.${EXT}'
+          with zipfile.ZipFile(dst, 'w', zipfile.ZIP_DEFLATED) as z:
+              z.write(src, arcname=arcname)
+          print('wrote', dst)
+          PYEOF
+          ls -la dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*.zip
+
+  publish-release:
+    name: Publish Release
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: artifacts
+        run: |
+          set -e
+          sha256sum *.zip > checksums.txt
+          cat checksums.txt
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.zip
-            dist/checksums.txt
+            artifacts/*.zip
+            artifacts/checksums.txt
           generate_release_notes: true
