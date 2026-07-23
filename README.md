@@ -40,7 +40,7 @@ go run cmd/build/main.go
    ```yaml
    plugins:
      store-sources:
-       - "https://raw.githubusercontent.com/john-walks-slow/my-cpa/main/registry.json"
+       - "https://raw.githubusercontent.com/john-walks-slow/my-cpa/master/registry.json"
    ```
 
 2. 重启 cpa，访问 Management Center → Plugin Store，或调用：
