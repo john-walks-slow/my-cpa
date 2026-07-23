@@ -76,6 +76,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           EXT: ${{ matrix.ext }}
+        shell: bash
         run: |
           set -e
           VER="${VERSION#v}"
