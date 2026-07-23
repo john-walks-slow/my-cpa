@@ -31,6 +31,28 @@ go run cmd/build/main.go
 
 将二进制放入 CLIProxyAPI 的 `plugins/<GOOS>/<GOARCH>/` 目录，host 启动时自动加载。
 
+## Install via Plugin Store
+
+通过 CLIProxyAPI 的第三方插件源一键安装，无需手动传文件。
+
+1. 在 `config.yaml` 添加：
+
+   ```yaml
+   plugins:
+     store-sources:
+       - "https://raw.githubusercontent.com/john-walks-slow/my-cpa/main/registry.json"
+   ```
+
+2. 重启 cpa，访问 Management Center → Plugin Store，或调用：
+
+   ```bash
+   curl http://localhost:8317/v0/management/plugin-store
+   ```
+
+3. 在列表中点击 **Install**，cpa 会从 GitHub Release 下载对应平台的 zip 并解压到 `plugins/` 目录。
+
+4. 在 `config.yaml` 中启用并配置（见下文「配置」一节）。
+
 ## 配置
 
 在 `config.yaml` 中（完整示例见 [`plugin/docs/config.example.yaml`](plugin/docs/config.example.yaml)）：

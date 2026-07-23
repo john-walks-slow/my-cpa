@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "plugins": [
+    {
+      "id": "my-cpa-stats-plugin",
+      "name": "my-cpa-stats-plugin",
+      "description": "CLIProxyAPI model speed stats plugin: TTFT/latency/TPS aggregation, in-process dashboard, compare & share. Zero-interceptor UsagePlugin + ManagementAPI.",
+      "author": "john-walks-slow",
+      "repository": "https://github.com/john-walks-slow/my-cpa",
+      "homepage": "https://github.com/john-walks-slow/my-cpa",
+      "license": "MIT",
+      "logo": "logo.png",
+      "tags": ["stats", "observability", "dashboard", "compare"]
+    }
+  ]
+}
